@@ -11,7 +11,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
     Terminal,
 };
 
@@ -36,6 +36,13 @@ impl From<io::Error> for UiError {
 
 /// Opens the interactive palette and returns the item selected by the user.
 pub fn run_ui(items: Vec<PaletteItem>) -> Result<Option<PaletteItem>, UiError> {
+    run_ui_with_message(items, None)
+}
+
+pub(crate) fn run_ui_with_message(
+    items: Vec<PaletteItem>,
+    message: Option<&str>,
+) -> Result<Option<PaletteItem>, UiError> {
     let mut cleanup = TerminalCleanup::new();
     cleanup.enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -49,13 +56,17 @@ pub fn run_ui(items: Vec<PaletteItem>) -> Result<Option<PaletteItem>, UiError> {
     loop {
         let ranked = rank(&query, &items);
         selected = selected.min(ranked.len().saturating_sub(1));
-        terminal.draw(|frame| draw(frame, &items, &query, &ranked, selected))?;
+        terminal.draw(|frame| draw(frame, &items, &query, &ranked, selected, message))?;
 
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
                 continue;
             }
             match key {
+                KeyEvent {
+                    code: KeyCode::Esc | KeyCode::Enter,
+                    ..
+                } if message.is_some() => return Ok(None),
                 KeyEvent {
                     code: KeyCode::Esc, ..
                 } => return Ok(None),
@@ -117,6 +128,7 @@ fn draw(
     query: &str,
     ranked: &[usize],
     selected: usize,
+    message: Option<&str>,
 ) {
     let areas = Layout::default()
         .direction(Direction::Vertical)
@@ -185,6 +197,26 @@ fn draw(
             .wrap(Wrap { trim: true }),
         areas[3],
     );
+
+    if let Some(message) = message {
+        let popup = ratatui::layout::Rect {
+            x: frame.area().x + frame.area().width / 8,
+            y: frame.area().y + frame.area().height / 3,
+            width: frame.area().width * 3 / 4,
+            height: 5,
+        };
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!("{message}\n\nPress Enter or Escape to close."))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(" Herdr action failed "),
+                )
+                .wrap(Wrap { trim: true }),
+            popup,
+        );
+    }
 }
 
 struct TerminalCleanup {
@@ -231,6 +263,16 @@ impl TerminalCleanup {
     }
 }
 
+impl Drop for TerminalCleanup {
+    fn drop(&mut self) {
+        if self.raw_mode {
+            let _ = disable_raw_mode();
+        }
+        let mut stdout = io::stdout();
+        let _ = self.restore_screen(&mut stdout);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::TerminalCleanup;
@@ -247,15 +289,5 @@ mod tests {
         cleanup.restore_screen(&mut output).unwrap();
 
         assert!(output.is_empty());
-    }
-}
-
-impl Drop for TerminalCleanup {
-    fn drop(&mut self) {
-        if self.raw_mode {
-            let _ = disable_raw_mode();
-        }
-        let mut stdout = io::stdout();
-        let _ = self.restore_screen(&mut stdout);
     }
 }
