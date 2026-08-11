@@ -1,0 +1,4 @@
+.worktrees/
+.superpowers/
+target/
+bin/herdr-palette
