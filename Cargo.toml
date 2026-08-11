@@ -12,6 +12,7 @@ name = "herdr-palette"
 path = "src/main.rs"
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
 
 [dev-dependencies]
-toml = "0.8"
