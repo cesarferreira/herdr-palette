@@ -6,6 +6,7 @@ const theme = { background: "#29284f", panel: "#3c3b68", text: "#e9e8ff", muted:
 const renderer = await createCliRenderer({ exitOnCtrlC: true });
 const allItems = loadPaletteItems();
 let query = "", selected = 0;
+let activePanel: BoxRenderable | undefined;
 
 function matches(item: typeof allItems[number]) {
   const haystack = [item.title, item.description, ...item.aliases, ...item.shortcuts].join(" ").toLowerCase();
@@ -13,7 +14,7 @@ function matches(item: typeof allItems[number]) {
 }
 
 function redraw() {
-  renderer.root.remove("palette");
+  activePanel?.destroy();
   const items = allItems.filter(matches); selected = Math.max(0, Math.min(selected, items.length - 1));
   const panel = new BoxRenderable(renderer, { id: "palette", flexDirection: "column", backgroundColor: theme.background, padding: 2, gap: 1 });
   panel.add(new BoxRenderable(renderer, { id: "heading", flexDirection: "row" }));
@@ -30,7 +31,7 @@ function redraw() {
     row.add(new TextRenderable(renderer, { id: `label-${index}`, content: `${item.icon}  ${item.title}`, fg: index === selected ? theme.text : theme.muted, flexGrow: 1 }));
     row.add(new TextRenderable(renderer, { id: `key-${index}`, content: item.shortcuts.join(" / "), fg: index === selected ? theme.accent : theme.muted })); panel.add(row);
   });
-  panel.add(new TextRenderable(renderer, { id: "footer", content: `enter select   ↑/↓ move   ${items.length} commands`, fg: theme.muted, marginTop: 1 })); renderer.root.add(panel);
+  panel.add(new TextRenderable(renderer, { id: "footer", content: `enter select   ↑/↓ move   ${items.length} commands`, fg: theme.muted, marginTop: 1 })); renderer.root.add(panel); activePanel = panel;
 }
 
 renderer.keyInput.on("keypress", async key => {
