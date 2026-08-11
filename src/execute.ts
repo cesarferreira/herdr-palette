@@ -1,0 +1,2 @@
+import type { PaletteItem } from "./types";
+export async function execute(item:PaletteItem){ if(item.invocation.kind!=="herdr") return {ok:false,message:"Use the displayed shortcut for this Herdr command."}; const command=process.env.HERDR_BIN_PATH??"herdr"; const child=Bun.spawn([command,...item.invocation.argv],{stdout:"ignore",stderr:"pipe"}); const code=await child.exited; return code===0?{ok:true,message:""}:{ok:false,message:(await new Response(child.stderr).text()).trim()||`Herdr exited with status ${code}.`}; }

@@ -6,7 +6,7 @@ description = "Fuzzy command palette that teaches effective Herdr shortcuts"
 platforms = ["linux", "macos"]
 
 [[build]]
-command = ["sh", "scripts/install-release.sh"]
+command = ["bun", "install", "--production"]
 
 [[panes]]
 id = "picker"
@@ -14,4 +14,4 @@ title = "Herdr Palette"
 placement = "popup"
 width = "80%"
 height = 20
-command = ["./target/release/herdr-palette"]
+command = ["bun", "run", "src/main.ts"]
