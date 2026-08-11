@@ -24,7 +24,7 @@ function redraw() {
   const input = new InputRenderable(renderer, { id: "search", value: query, placeholder: "Search commands", backgroundColor: theme.background, focusedBackgroundColor: theme.background, textColor: theme.text, cursorColor: theme.accent });
   input.on(InputRenderableEvents.INPUT, (value: string) => { query = value; selected = 0; redraw(); });
   panel.add(input); input.focus();
-  const window = viewport(items.length, selected, Math.max(5, renderer.height - 7));
+  const window = viewport(items, selected, Math.max(5, renderer.height - 7), item => item.category);
   let category = "";
   items.slice(window.start, window.end).forEach((item, offset) => {
     const index = window.start + offset;
