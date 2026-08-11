@@ -36,9 +36,11 @@ and releases macOS and Linux artifacts.
 
 The executable starts with an in-code versioned map of Herdr's default actions,
 descriptions, aliases, and default shortcuts. It locates the platform-standard
-Herdr configuration and parses its `[keys]` section. User bindings override
-the matching default labels; an action configured with no usable binding is
-shown as unbound or omitted where it cannot run.
+Herdr configuration and parses its `[keys]` section, including user-defined
+`[[keys.command]]` entries. User bindings override the matching default labels;
+an action configured with no usable binding is shown as unbound or omitted where
+it cannot run. User-defined Herdr commands are displayed from that same config;
+the plugin does not introduce a second configuration format.
 
 Displaying the resolved binding, rather than only the defaults, ensures that
 the palette teaches a user's actual muscle memory after remapping their keys.
@@ -90,4 +92,3 @@ and invokes an action.
 
 CI runs formatting, linting, and tests, and creates Linux and macOS release
 artifacts.
-
