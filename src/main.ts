@@ -1,6 +1,7 @@
 import { BoxRenderable, InputRenderable, InputRenderableEvents, TextRenderable, createCliRenderer } from "@opentui/core";
 import { loadPaletteItems } from "./config";
 import { execute } from "./execute";
+import { viewport } from "./viewport";
 
 const theme = { background: "#29284f", panel: "#3c3b68", text: "#e9e8ff", muted: "#a7a4df", accent: "#ffe11a" };
 const renderer = await createCliRenderer({ exitOnCtrlC: true });
@@ -23,8 +24,10 @@ function redraw() {
   const input = new InputRenderable(renderer, { id: "search", value: query, placeholder: "Search commands", backgroundColor: theme.background, focusedBackgroundColor: theme.background, textColor: theme.text, cursorColor: theme.accent });
   input.on(InputRenderableEvents.INPUT, (value: string) => { query = value; selected = 0; redraw(); });
   panel.add(input); input.focus();
+  const window = viewport(items.length, selected, Math.max(5, renderer.height - 7));
   let category = "";
-  items.slice(0, 16).forEach((item, index) => {
+  items.slice(window.start, window.end).forEach((item, offset) => {
+    const index = window.start + offset;
     if (item.category !== category) { category = item.category; panel.add(new TextRenderable(renderer, { id: `category-${category}`, content: category, fg: theme.accent, attributes: 1 })); }
     const row = new BoxRenderable(renderer, { id: `item-${index}`, flexDirection: "row", width: "100%", paddingLeft: 1, paddingRight: 2, backgroundColor: index === selected ? theme.panel : theme.background });
     row.add(new TextRenderable(renderer, { id: `mark-${index}`, content: index === selected ? "┃" : " ", fg: theme.accent }));
