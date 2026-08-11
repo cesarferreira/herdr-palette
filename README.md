@@ -5,7 +5,7 @@ fuzzy-finds supported Herdr actions, shows each action's effective shortcut,
 and runs the action directly through Herdr's documented API-backed CLI.
 
 The palette is a shortcut-learning aid as well as a fallback when you forget a
-binding. It has no runtime dependency on Node, Bun, fzf, or a package manager.
+binding. It uses Bun and OpenTUI for a fast, polished terminal interface.
 
 ## Install
 
@@ -15,10 +15,10 @@ Install the plugin from GitHub:
 herdr plugin install cesarferreira/herdr-palette
 ```
 
-For local development, build the release binary and link this checkout:
+Install [Bun](https://bun.sh), then link the checkout for local development:
 
 ```sh
-cargo build --release && herdr plugin link .
+bun install && herdr plugin link .
 ```
 
 ## Open the palette

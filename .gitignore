@@ -1,4 +1,5 @@
 .worktrees/
 .superpowers/
 target/
+node_modules/
 bin/herdr-palette
