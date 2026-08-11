@@ -1,0 +1,17 @@
+id = "cesarferreira.herdr-palette"
+name = "Herdr Palette"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Fuzzy command palette that teaches effective Herdr shortcuts"
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["sh", "scripts/install-release.sh"]
+
+[[panes]]
+id = "picker"
+title = "Herdr Palette"
+placement = "popup"
+width = "80%"
+height = 20
+command = ["bin/herdr-palette"]

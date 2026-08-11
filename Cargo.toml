@@ -1,0 +1,14 @@
+[package]
+name = "herdr-palette"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "herdr_palette"
+path = "src/lib.rs"
+
+[[bin]]
+name = "herdr-palette"
+path = "src/main.rs"
+
+[dependencies]
