@@ -11,7 +11,7 @@ fn keeps_an_existing_development_binary() {
         .expect("system time should be after the Unix epoch")
         .as_nanos();
     let temporary_directory = std::env::temp_dir().join(format!("herdr-palette-{unique}"));
-    let binary_directory = temporary_directory.join("bin");
+    let binary_directory = temporary_directory.join("target/release");
     let binary = binary_directory.join("herdr-palette");
 
     fs::create_dir_all(&binary_directory).expect("temporary bin directory should be created");
@@ -31,6 +31,6 @@ fn keeps_an_existing_development_binary() {
     assert!(output.status.success());
     assert_eq!(
         String::from_utf8(output.stdout).expect("script output should be UTF-8"),
-        "bin/herdr-palette already exists; using development binary.\n"
+        "target/release/herdr-palette already exists; using development binary.\n"
     );
 }

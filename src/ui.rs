@@ -170,7 +170,8 @@ fn draw(
             .block(Block::default().borders(Borders::ALL).title(" Results "))
             .highlight_style(
                 Style::default()
-                    .bg(Color::Blue)
+                    .fg(Color::Black)
+                    .bg(Color::Yellow)
                     .add_modifier(Modifier::BOLD),
             ),
         areas[2],
@@ -275,7 +276,10 @@ impl Drop for TerminalCleanup {
 
 #[cfg(test)]
 mod tests {
-    use super::TerminalCleanup;
+    use ratatui::{backend::TestBackend, style::Color, Terminal};
+
+    use super::{draw, TerminalCleanup};
+    use crate::{catalog::default_items, rank};
 
     #[test]
     fn failed_setup_does_not_emit_alternate_screen_cleanup() {
@@ -289,5 +293,21 @@ mod tests {
         cleanup.restore_screen(&mut output).unwrap();
 
         assert!(output.is_empty());
+    }
+
+    #[test]
+    fn selected_result_uses_high_contrast_foreground_and_background() {
+        let items = default_items();
+        let ranked = rank("", &items);
+        let backend = TestBackend::new(80, 20);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        terminal
+            .draw(|frame| draw(frame, &items, "", &ranked, 0, None))
+            .unwrap();
+
+        let selected_title = &terminal.backend().buffer()[(1, 7)];
+        assert_eq!(selected_title.fg, Color::Black);
+        assert_eq!(selected_title.bg, Color::Yellow);
     }
 }

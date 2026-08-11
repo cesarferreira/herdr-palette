@@ -14,4 +14,4 @@ title = "Herdr Palette"
 placement = "popup"
 width = "80%"
 height = 20
-command = ["bin/herdr-palette"]
+command = ["./target/release/herdr-palette"]

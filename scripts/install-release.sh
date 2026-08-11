@@ -2,12 +2,12 @@
 set -eu
 
 repository_root=$(pwd)
-binary_directory="$repository_root/bin"
+binary_directory="$repository_root/target/release"
 binary_path="$binary_directory/herdr-palette"
 manifest="$repository_root/herdr-plugin.toml"
 
 if [ -e "$binary_path" ]; then
-    echo "bin/herdr-palette already exists; using development binary."
+    echo "target/release/herdr-palette already exists; using development binary."
     exit 0
 fi
 

@@ -21,7 +21,7 @@ make_fixture() {
     system_name="$2"
     machine_name="$3"
 
-    mkdir -p "$fixture_root/scripts" "$fixture_root/bin" "$fixture_root/stubs" "$fixture_root/release"
+    mkdir -p "$fixture_root/scripts" "$fixture_root/target/release" "$fixture_root/stubs" "$fixture_root/release"
     cp "$installer" "$fixture_root/scripts/install-release.sh"
     printf '%s\n' 'version = "9.8.7"' > "$fixture_root/herdr-plugin.toml"
     printf '%s\n' '#!/bin/sh' 'exit 0' > "$fixture_root/release/herdr-palette"
@@ -71,7 +71,7 @@ assert_platform() {
             sh scripts/install-release.sh
     )
 
-    [ -x "$fixture_root/bin/herdr-palette" ] || fail "installer did not create an executable binary"
+    [ -x "$fixture_root/target/release/herdr-palette" ] || fail "installer did not create an executable binary"
     grep -F "/v9.8.7/herdr-palette-$expected_target.tar.gz" "$fixture_root/curl-arguments" >/dev/null \
         || fail "installer selected the wrong release asset"
 }

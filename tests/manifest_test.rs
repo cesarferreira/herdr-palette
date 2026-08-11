@@ -30,6 +30,6 @@ fn declares_the_required_herdr_popup_picker() {
             .iter()
             .filter_map(Value::as_str)
             .collect::<Vec<_>>(),
-        ["bin/herdr-palette"]
+        ["./target/release/herdr-palette"]
     );
 }
