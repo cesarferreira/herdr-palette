@@ -42,6 +42,16 @@ running configuration with:
 herdr server reload-config
 ```
 
+## Release
+
+Validate the project, bump the minor version, commit, tag, and push:
+
+```sh
+make release
+```
+
+Use `make release LEVEL=patch` or `LEVEL=major` for a different bump.
+
 ## Configuration and scope
 
 The palette reads Herdr's `config.toml`, including `[keys]` remaps and custom
