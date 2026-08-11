@@ -23,10 +23,10 @@ impl std::error::Error for ConfigError {}
 
 pub fn load_effective_items(config_path: Option<&Path>) -> Result<Vec<PaletteItem>, ConfigError> {
     let Some(path) = config_path.map(PathBuf::from).or_else(discover_config_path) else {
-        return Ok(default_items());
+        return Ok(default_effective_items());
     };
     if !path.exists() {
-        return Ok(default_items());
+        return Ok(default_effective_items());
     }
 
     let source = fs::read_to_string(&path)
@@ -66,6 +66,18 @@ pub fn load_effective_items(config_path: Option<&Path>) -> Result<Vec<PaletteIte
         }
     }
     Ok(items)
+}
+
+fn default_effective_items() -> Vec<PaletteItem> {
+    let mut items = default_items();
+    for item in &mut items {
+        item.shortcuts = item
+            .shortcuts
+            .iter()
+            .map(|shortcut| expand_prefix(shortcut, "ctrl+b"))
+            .collect();
+    }
+    items
 }
 
 fn discover_config_path() -> Option<PathBuf> {

@@ -44,23 +44,21 @@ pub fn default_items() -> Vec<PaletteItem> {
             &["prefix+c"],
             &["tab", "create", "--focus"],
         ),
-        action(
+        documentation(
             "previous_tab",
             "Previous tab",
-            Category::Tab,
             "Focus the previous tab",
             &["tab", "previous"],
             &["prefix+p"],
-            &["tab", "focus", "--previous", "--current"],
+            Category::Tab,
         ),
-        action(
+        documentation(
             "next_tab",
             "Next tab",
-            Category::Tab,
             "Focus the next tab",
             &["tab", "next"],
             &["prefix+n"],
-            &["tab", "focus", "--next", "--current"],
+            Category::Tab,
         ),
         action(
             "focus_pane_left",
@@ -175,14 +173,13 @@ pub fn default_items() -> Vec<PaletteItem> {
             &["prefix+z"],
             &["pane", "zoom", "--current"],
         ),
-        action(
+        documentation(
             "close_pane",
             "Close pane",
-            Category::Pane,
             "Close the current pane",
             &["pane", "close"],
             &["prefix+x"],
-            &["pane", "close", "--current"],
+            Category::Pane,
         ),
         documentation(
             "help",

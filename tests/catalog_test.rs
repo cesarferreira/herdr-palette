@@ -42,3 +42,20 @@ fn maps_supported_actions_to_documented_herdr_argv() {
         ])
     );
 }
+
+#[test]
+fn leaves_actions_without_a_documented_direct_api_as_shortcut_documentation() {
+    let items = default_items();
+
+    for action in ["previous_tab", "next_tab", "close_pane"] {
+        assert_eq!(
+            items
+                .iter()
+                .find(|item| item.id == action)
+                .expect("action should be catalogued")
+                .invocation,
+            Invocation::DocumentationOnly,
+            "{action} must not emit unsupported Herdr argv"
+        );
+    }
+}

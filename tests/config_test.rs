@@ -59,3 +59,21 @@ description = "Show Git status"
     assert_eq!(custom_command.shortcuts, ["ctrl+a+g"]);
     assert_eq!(custom_command.invocation, Invocation::DocumentationOnly);
 }
+
+#[test]
+fn missing_config_expands_default_prefix_shortcuts() {
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system time should be after the Unix epoch")
+        .as_nanos();
+    let missing_path = std::env::temp_dir().join(format!("herdr-palette-missing-{unique}.toml"));
+
+    let items =
+        load_effective_items(Some(&missing_path)).expect("missing config should use defaults");
+    let new_tab = items
+        .iter()
+        .find(|item| item.id == "new_tab")
+        .expect("New tab should be present");
+
+    assert_eq!(new_tab.shortcuts, ["ctrl+b+c"]);
+}
