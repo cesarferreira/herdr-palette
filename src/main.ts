@@ -17,7 +17,7 @@ function matches(item: typeof allItems[number]) {
 function redraw() {
   activePanel?.destroy();
   const items = allItems.filter(matches); selected = Math.max(0, Math.min(selected, items.length - 1));
-  const panel = new BoxRenderable(renderer, { id: "palette", flexDirection: "column", backgroundColor: theme.background, padding: 2, gap: 1 });
+  const panel = new BoxRenderable(renderer, { id: "palette", flexDirection: "column", backgroundColor: theme.background, padding: 2, paddingTop: 0, gap: 1 });
   panel.add(new BoxRenderable(renderer, { id: "heading", flexDirection: "row" }));
   panel.getRenderable("heading")!.add(new TextRenderable(renderer, { id: "title", content: "Commands", fg: theme.text, attributes: 1, flexGrow: 1 }));
   panel.getRenderable("heading")!.add(new TextRenderable(renderer, { id: "escape", content: "esc", fg: theme.muted }));
