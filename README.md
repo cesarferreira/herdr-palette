@@ -4,6 +4,8 @@ Herdr Palette is a popup command palette for [Herdr](https://herdr.dev). It
 fuzzy-finds supported Herdr actions, shows each action's effective shortcut,
 and runs the action directly through Herdr's documented API-backed CLI.
 
+![Herdr Palette](docs/screenshot2.png)
+
 The palette is a shortcut-learning aid as well as a fallback when you forget a
 binding. It uses Bun and OpenTUI for a fast, polished terminal interface.
 
