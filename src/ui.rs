@@ -1,4 +1,4 @@
-use std::{fmt, io};
+use std::{fmt, io, io::Write};
 
 use crossterm::{
     cursor,
@@ -36,10 +36,10 @@ impl From<io::Error> for UiError {
 
 /// Opens the interactive palette and returns the item selected by the user.
 pub fn run_ui(items: Vec<PaletteItem>) -> Result<Option<PaletteItem>, UiError> {
-    let _cleanup = TerminalCleanup;
-    enable_raw_mode()?;
+    let mut cleanup = TerminalCleanup::new();
+    cleanup.enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, cursor::Hide)?;
+    cleanup.enter_alternate_screen(&mut stdout)?;
 
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
@@ -187,12 +187,75 @@ fn draw(
     );
 }
 
-struct TerminalCleanup;
+struct TerminalCleanup {
+    raw_mode: bool,
+    alternate_screen: bool,
+    cursor_hidden: bool,
+}
+
+impl TerminalCleanup {
+    fn new() -> Self {
+        Self {
+            raw_mode: false,
+            alternate_screen: false,
+            cursor_hidden: false,
+        }
+    }
+
+    fn enable_raw_mode(&mut self) -> io::Result<()> {
+        self.acquire_raw_mode(enable_raw_mode)
+    }
+
+    fn acquire_raw_mode(&mut self, acquire: impl FnOnce() -> io::Result<()>) -> io::Result<()> {
+        acquire()?;
+        self.raw_mode = true;
+        Ok(())
+    }
+
+    fn enter_alternate_screen(&mut self, writer: &mut impl Write) -> io::Result<()> {
+        execute!(writer, EnterAlternateScreen)?;
+        self.alternate_screen = true;
+        execute!(writer, cursor::Hide)?;
+        self.cursor_hidden = true;
+        Ok(())
+    }
+
+    fn restore_screen(&self, writer: &mut impl Write) -> io::Result<()> {
+        if self.alternate_screen {
+            execute!(writer, LeaveAlternateScreen)?;
+        }
+        if self.cursor_hidden {
+            execute!(writer, cursor::Show)?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::TerminalCleanup;
+
+    #[test]
+    fn failed_setup_does_not_emit_alternate_screen_cleanup() {
+        let mut cleanup = TerminalCleanup::new();
+        let mut output = Vec::new();
+
+        let setup_result =
+            cleanup.acquire_raw_mode(|| Err(std::io::Error::other("not a terminal")));
+
+        assert!(setup_result.is_err());
+        cleanup.restore_screen(&mut output).unwrap();
+
+        assert!(output.is_empty());
+    }
+}
 
 impl Drop for TerminalCleanup {
     fn drop(&mut self) {
-        let _ = disable_raw_mode();
+        if self.raw_mode {
+            let _ = disable_raw_mode();
+        }
         let mut stdout = io::stdout();
-        let _ = execute!(stdout, LeaveAlternateScreen, cursor::Show);
+        let _ = self.restore_screen(&mut stdout);
     }
 }
