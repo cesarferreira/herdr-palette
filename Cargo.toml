@@ -12,3 +12,6 @@ name = "herdr-palette"
 path = "src/main.rs"
 
 [dependencies]
+
+[dev-dependencies]
+toml = "0.8"
