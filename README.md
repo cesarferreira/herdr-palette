@@ -60,6 +60,9 @@ The palette reads Herdr's `config.toml`, including `[keys]` remaps and custom
 `[[keys.command]]` bindings, so it displays your effective shortcuts. It owns
 no configuration or durable state and never writes to your Herdr config.
 
-Only actions documented by Herdr and backed by its CLI/API are available for
-direct execution. Custom commands from your configuration are shown as
-documentation only; their execution semantics remain owned by Herdr.
+Only actions documented by Herdr and backed by its CLI/API run directly from the
+palette. Herdr's UI-only commands — the shortcut guide, settings, copy mode, and
+detach — have no CLI equivalent, so enter reports the shortcut to press instead.
+Custom commands from your configuration are shown as documentation only; their
+execution semantics remain owned by Herdr. A failing Herdr command shows its
+error and leaves the palette open.

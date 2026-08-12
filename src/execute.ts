@@ -1,2 +1,22 @@
-import type { PaletteItem } from "./types";
-export async function execute(item:PaletteItem){ if(item.invocation.kind!=="herdr") return {ok:false,message:"Use the displayed shortcut for this Herdr command."}; const command=process.env.HERDR_BIN_PATH??"herdr"; const child=Bun.spawn([command,...item.invocation.argv],{stdout:"ignore",stderr:"pipe"}); const code=await child.exited; return code===0?{ok:true,message:""}:{ok:false,message:(await new Response(child.stderr).text()).trim()||`Herdr exited with status ${code}.`}; }
+import { explain, neighborTab, runHerdr, sessionTarget } from "./herdr";
+import type { CommandResult, Invocation, PaletteItem } from "./types";
+
+type Resolution = { argv: string[] } | { message: string };
+
+/** Some Herdr commands take an explicit target, so they need the pane the palette was summoned from. */
+async function resolve(invocation: Exclude<Invocation, { kind: "shortcut" }>): Promise<Resolution> {
+  if (invocation.kind === "herdr") return { argv: invocation.argv };
+  const target = await sessionTarget();
+  if (!target) return { message: "Herdr did not report the pane that opened the palette." };
+  if (invocation.kind === "close-pane") return { argv: ["pane", "close", target.paneId] };
+  const neighbor = await neighborTab(target, invocation.step);
+  return "tabId" in neighbor ? { argv: ["tab", "focus", neighbor.tabId] } : neighbor;
+}
+
+export async function execute(item: PaletteItem): Promise<CommandResult> {
+  if (item.invocation.kind === "shortcut") return { ok: false, message: `Press ${item.shortcuts.join(" / ")} — Herdr only runs this one from the keyboard.` };
+  const resolved = await resolve(item.invocation);
+  if ("message" in resolved) return { ok: false, message: resolved.message };
+  const { code, stderr } = await runHerdr(resolved.argv);
+  return code === 0 ? { ok: true, message: "" } : { ok: false, message: explain(stderr, code) };
+}
