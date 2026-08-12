@@ -33,7 +33,7 @@ test("paints the palette background across the whole popup", async () => {
 
   const frame = captureSpans();
   expect(frame.lines).toHaveLength(renderer.height);
-  for (const line of frame.lines) expect(line.spans.map(span => hex(span.bg))).toContain(theme.background);
+  for (const line of frame.lines.slice(0, -1)) expect(line.spans.map(span => hex(span.bg))).toContain(theme.background);
 });
 
 test("pins the footer to the bottom of the popup", async () => {
@@ -44,7 +44,19 @@ test("pins the footer to the bottom of the popup", async () => {
 
   const rows = rowsOf(captureCharFrame());
   expect(rows).toHaveLength(14);
-  expect(rows.at(-2)).toContain("1 commands");
+  expect(rows.at(-1)).toContain("1 commands");
+});
+
+test("sets the footer apart as a full-width bar", async () => {
+  const { renderer, mockInput, renderOnce, captureSpans } = await palette({ ok: true, message: "" });
+
+  await mockInput.typeText("settings");
+  await renderOnce();
+
+  const footer = captureSpans().lines.at(-1)!;
+  expect(footer.spans.map(span => hex(span.bg))).toEqual(footer.spans.map(() => theme.footer));
+  expect(footer.spans.reduce((width, span) => width + span.text.length, 0)).toBe(renderer.width);
+  expect(footer.spans.filter(span => hex(span.fg) === theme.accent).map(span => span.text)).toEqual(["enter", "↑/↓"]);
 });
 
 test("closes the palette once a Herdr command succeeds", async () => {
@@ -68,8 +80,8 @@ test("reports why a command did not run instead of ignoring enter", async () => 
 
   const rows = rowsOf(captureCharFrame());
   expect(rows).toHaveLength(14);
-  expect(rows.at(-3)).toContain("Press ctrl+a+z — Herdr only runs this one");
-  expect(rows.at(-2)).toContain("1 commands");
+  expect(rows.at(-2)).toContain("Press ctrl+a+z — Herdr only runs this one");
+  expect(rows.at(-1)).toContain("1 commands");
 });
 
 test("stays usable when running a command throws", async () => {
