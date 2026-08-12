@@ -40,13 +40,21 @@ export async function sessionTarget(): Promise<SessionTarget | undefined> {
   } catch { return undefined; }
 }
 
+export type RingStep = { id: string } | { message: string };
+
+/** Step through an ordered ring of IDs, wrapping at the ends. */
+export function stepRing(ids: string[], current: string, step: number, alone: string, missing: string): RingStep {
+  if (ids.length < 2) return { message: alone };
+  const index = ids.indexOf(current);
+  if (index < 0) return { message: missing };
+  return { id: ids[(index + step + ids.length) % ids.length]! };
+}
+
 export type TabStep = { tabId: string } | { message: string };
 
 export function stepTab(tabIds: string[], current: string, step: number): TabStep {
-  if (tabIds.length < 2) return { message: "This workspace only has one tab." };
-  const index = tabIds.indexOf(current);
-  if (index < 0) return { message: "Herdr did not report the tab that opened the palette." };
-  return { tabId: tabIds[(index + step + tabIds.length) % tabIds.length]! };
+  const result = stepRing(tabIds, current, step, "This workspace only has one tab.", "Herdr did not report the tab that opened the palette.");
+  return "id" in result ? { tabId: result.id } : result;
 }
 
 export async function neighborTab(target: SessionTarget, step: number): Promise<TabStep> {
@@ -55,5 +63,48 @@ export async function neighborTab(target: SessionTarget, step: number): Promise<
   try {
     const tabs: { tab_id: string }[] = JSON.parse(stdout)?.result?.tabs ?? [];
     return stepTab(tabs.map(tab => tab.tab_id), target.tabId, step);
-  } catch { return { message: "Herdr returned an unreadable tab list." } }
+  } catch { return { message: "Herdr returned an unreadable tab list." }; }
+}
+
+export type WorkspaceStep = { workspaceId: string } | { message: string };
+
+export function stepWorkspace(workspaceIds: string[], current: string, step: number): WorkspaceStep {
+  const result = stepRing(workspaceIds, current, step, "Only one workspace is open.", "Herdr did not report the workspace that opened the palette.");
+  return "id" in result ? { workspaceId: result.id } : result;
+}
+
+export async function neighborWorkspace(target: SessionTarget, step: number): Promise<WorkspaceStep> {
+  const { code, stdout, stderr } = await runHerdr(["workspace", "list"]);
+  if (code !== 0) return { message: explain(stderr, code) };
+  try {
+    const workspaces: { workspace_id: string }[] = JSON.parse(stdout)?.result?.workspaces ?? [];
+    return stepWorkspace(workspaces.map(workspace => workspace.workspace_id), target.workspaceId, step);
+  } catch { return { message: "Herdr returned an unreadable workspace list." }; }
+}
+
+export type AgentStep = { paneId: string } | { message: string };
+
+export function stepAgent(agents: { pane_id: string; focused?: boolean }[], currentPaneId: string, step: number): AgentStep {
+  if (agents.length === 0) return { message: "No agents are running." };
+  if (agents.length < 2) return { message: "Only one agent is running." };
+  let index = agents.findIndex(agent => agent.pane_id === currentPaneId);
+  if (index < 0) index = agents.findIndex(agent => agent.focused);
+  if (index < 0) index = 0;
+  return { paneId: agents[(index + step + agents.length) % agents.length]!.pane_id };
+}
+
+export async function neighborAgent(target: SessionTarget, step: number): Promise<AgentStep> {
+  const { code, stdout, stderr } = await runHerdr(["agent", "list"]);
+  if (code !== 0) return { message: explain(stderr, code) };
+  try {
+    const agents: { pane_id: string; focused?: boolean }[] = JSON.parse(stdout)?.result?.agents ?? [];
+    return stepAgent(agents, target.paneId, step);
+  } catch { return { message: "Herdr returned an unreadable agent list." }; }
+}
+
+/** Prefer --path when the input looks like a filesystem location; otherwise treat it as a branch name. */
+export function worktreeOpenArgv(workspaceId: string, input: string): string[] {
+  const value = input.trim();
+  const flag = value.startsWith("/") || value.startsWith("~") || value.startsWith(".") ? "--path" : "--branch";
+  return ["worktree", "open", "--workspace", workspaceId, flag, value, "--focus"];
 }

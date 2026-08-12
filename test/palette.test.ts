@@ -3,18 +3,25 @@ import { expect, test } from "bun:test";
 import { mountPalette, theme } from "../src/palette";
 import type { CommandResult, PaletteItem } from "../src/types";
 
-const item = (id: string, title: string, invocation: PaletteItem["invocation"]): PaletteItem =>
-  ({ id, title, category: "Panes", description: "", icon: "▯", aliases: [], shortcuts: ["ctrl+a+z"], invocation });
+const item = (id: string, title: string, invocation: PaletteItem["invocation"], prompt?: PaletteItem["prompt"]): PaletteItem =>
+  ({ id, title, category: "Panes", description: "Does the thing", icon: "▯", aliases: [], shortcuts: ["ctrl+a+z"], invocation, ...(prompt ? { prompt } : {}) });
 
 const items = [
   item("zoom", "Zoom pane", { kind: "herdr", argv: ["pane", "zoom", "--current"] }),
+  item("rename_pane", "Rename pane", { kind: "resolve", action: "rename-pane" }, { placeholder: "New name" }),
   item("settings", "Settings", { kind: "shortcut" }),
 ];
 
 async function palette(result: CommandResult) {
   const harness = await createTestRenderer({ width: 60, height: 14 });
-  const ran: string[] = [];
-  mountPalette(harness.renderer, items, { run: async selected => { ran.push(selected.id); return result; }, close: () => ran.push("closed") });
+  const ran: Array<{ id: string; input?: string } | "closed"> = [];
+  mountPalette(harness.renderer, items, {
+    run: async (selected, input) => {
+      ran.push(input === undefined ? { id: selected.id } : { id: selected.id, input });
+      return result;
+    },
+    close: () => ran.push("closed"),
+  });
   return { ...harness, ran };
 }
 
@@ -23,6 +30,8 @@ const hex = (color: { r: number; g: number; b: number }) =>
 
 /** Enter runs the command asynchronously, so let its result land before rendering. */
 const settle = () => new Promise(resolve => setTimeout(resolve, 0));
+/** Escape is ambiguous until OpenTUI's stdin parser timeout (~20ms) flushes it. */
+const settleEscape = () => new Promise(resolve => setTimeout(resolve, 30));
 const rowsOf = (frame: string) => frame.split("\n").filter((row, index, all) => index < all.length - 1 || row !== "");
 
 test("paints the palette background across the whole popup", async () => {
@@ -67,7 +76,42 @@ test("closes the palette once a Herdr command succeeds", async () => {
   await settle();
   await renderOnce();
 
-  expect(ran).toEqual(["zoom", "closed"]);
+  expect(ran).toEqual([{ id: "zoom" }, "closed"]);
+});
+
+test("asks for input before running a prompted command", async () => {
+  const { mockInput, renderOnce, captureCharFrame, ran } = await palette({ ok: true, message: "" });
+
+  await mockInput.typeText("rename");
+  mockInput.pressEnter();
+  await settle();
+  await renderOnce();
+
+  expect(captureCharFrame()).toContain("Rename pane");
+  expect(captureCharFrame()).toContain("New name");
+  expect(ran).toEqual([]);
+
+  await mockInput.typeText("logs");
+  mockInput.pressEnter();
+  await settle();
+  await renderOnce();
+
+  expect(ran).toEqual([{ id: "rename_pane", input: "logs" }, "closed"]);
+});
+
+test("returns to search when escaping a prompt", async () => {
+  const { mockInput, renderOnce, captureCharFrame, ran } = await palette({ ok: true, message: "" });
+
+  await mockInput.typeText("rename");
+  mockInput.pressEnter();
+  await settle();
+  mockInput.pressEscape();
+  await settleEscape();
+  await renderOnce();
+
+  expect(captureCharFrame()).toContain("Commands");
+  expect(captureCharFrame()).toContain("1 commands");
+  expect(ran).toEqual([]);
 });
 
 test("reports why a command did not run instead of ignoring enter", async () => {
