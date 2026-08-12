@@ -1,5 +1,8 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, test } from "bun:test";
-import { parseKeyRemaps, unescapeToml } from "../src/config";
+import { loadPaletteItems, parseKeyRemaps, unescapeToml } from "../src/config";
 import { defaultItems } from "../src/catalog";
 import { explain, parseLaunchContext, stepAgent, stepTab, stepWorkspace, worktreeOpenArgv } from "../src/herdr";
 
@@ -76,6 +79,16 @@ open_worktree = ""
 test("decodes TOML backslash escapes so a bound backslash shows once", () => {
   expect(unescapeToml("prefix+\\\\")).toBe("prefix+\\");
   expect(parseKeyRemaps('split_vertical = "prefix+\\\\"').get("split_vertical")).toBe("prefix+\\");
+});
+
+test("keeps the word prefix in displayed shortcuts instead of expanding the leader", () => {
+  const dir = mkdtempSync(join(tmpdir(), "herdr-palette-"));
+  const path = join(dir, "config.toml");
+  writeFileSync(path, 'prefix = "ctrl+a"\nsplit_vertical = "prefix+\\\\"\nrename_workspace = "prefix+shift+r"\n');
+  const items = loadPaletteItems(path);
+  expect(items.find(item => item.id === "split_vertical")?.shortcuts).toEqual(["prefix+\\"]);
+  expect(items.find(item => item.id === "rename_workspace")?.shortcuts).toEqual(["prefix+shift+r"]);
+  expect(items.find(item => item.id === "zoom")?.shortcuts).toEqual(["prefix+z"]);
 });
 
 /**

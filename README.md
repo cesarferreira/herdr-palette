@@ -57,8 +57,10 @@ Use `make release LEVEL=patch` or `LEVEL=major` for a different bump.
 ## Configuration and scope
 
 The palette reads Herdr's `config.toml`, including `[keys]` remaps and custom
-`[[keys.command]]` bindings, so it displays your effective shortcuts. It owns
-no configuration or durable state and never writes to your Herdr config.
+`[[keys.command]]` bindings, so it displays your effective shortcuts. Bindings
+keep the word `prefix` instead of expanding it to the concrete leader key
+(e.g. `prefix+z`, not `ctrl+a+z`). It owns no configuration or durable state
+and never writes to your Herdr config.
 
 Only actions documented by Herdr and backed by its CLI/API run directly from the
 palette, including rename, close, workspace/agent navigation, resize, swap, move
