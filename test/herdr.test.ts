@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseKeyRemaps } from "../src/config";
+import { parseKeyRemaps, unescapeToml } from "../src/config";
 import { defaultItems } from "../src/catalog";
 import { explain, parseLaunchContext, stepAgent, stepTab, stepWorkspace, worktreeOpenArgv } from "../src/herdr";
 
@@ -71,6 +71,11 @@ open_worktree = ""
   expect(remaps.get("rename_workspace")).toBe("prefix+shift+r");
   expect(remaps.get("previous_workspace")).toBe("prefix+[");
   expect(remaps.get("open_worktree")).toBe("");
+});
+
+test("decodes TOML backslash escapes so a bound backslash shows once", () => {
+  expect(unescapeToml("prefix+\\\\")).toBe("prefix+\\");
+  expect(parseKeyRemaps('split_vertical = "prefix+\\\\"').get("split_vertical")).toBe("prefix+\\");
 });
 
 /**
