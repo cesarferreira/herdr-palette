@@ -1,6 +1,6 @@
 id = "cesarferreira.herdr-palette"
 name = "Herdr Palette"
-version = "0.3.2"
+version = "0.3.3"
 min_herdr_version = "0.7.0"
 description = "Fuzzy command palette that teaches effective Herdr shortcuts"
 platforms = ["linux", "macos"]
