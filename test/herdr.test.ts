@@ -33,6 +33,20 @@ test("surfaces the message from a Herdr error envelope", () => {
   expect(explain("", 2)).toBe("Herdr exited with status 2.");
 });
 
+/**
+ * Terminal fonts ship wildly different symbol coverage, and a glyph the font lacks falls back to
+ * another font with its own metrics — which misaligns the row. Keep icons inside the set verified
+ * present at single-cell width in common terminal fonts (ASCII plus arrows and geometric shapes).
+ */
+test("draws every icon with a glyph terminal fonts actually carry", () => {
+  const verified = new Set(["?", "«", "»", "×", "≡", "←", "→", "↑", "↓", "◇", "◈", "▣", "▤", "▧", "▯", "▭", "◲"]);
+
+  for (const item of defaultItems()) {
+    expect([...item.icon]).toHaveLength(1);
+    expect(verified).toContain(item.icon);
+  }
+});
+
 test("runs every catalog entry Herdr's CLI can perform", () => {
   const runnable = defaultItems().filter(item => item.invocation.kind !== "shortcut").map(item => item.id);
 
