@@ -2,7 +2,7 @@ import { BoxRenderable, InputRenderable, InputRenderableEvents, TextRenderable, 
 import type { CommandResult, PaletteItem } from "./types";
 import { viewport } from "./viewport";
 
-export const theme = { background: "#29284f", panel: "#3c3b68", text: "#e9e8ff", muted: "#a7a4df", accent: "#ffe11a", footer: "#1d1c3a", footerText: "#8f8cd0" };
+export const theme = { background: "#29284f", panel: "#3c3b68", text: "#e9e8ff", muted: "#a7a4df", accent: "#ffe11a", shortcut: "#8be9fd", footer: "#1d1c3a", footerText: "#8f8cd0" };
 
 export interface PaletteDeps { run: (item: PaletteItem, input?: string) => Promise<CommandResult>; close: () => void }
 
@@ -67,7 +67,7 @@ export function mountPalette(renderer: CliRenderer, allItems: PaletteItem[], dep
         const row = new BoxRenderable(renderer, { id: `item-${index}`, flexDirection: "row", width: "100%", paddingLeft: 1, paddingRight: 2, backgroundColor: index === selected ? theme.panel : theme.background });
         row.add(new TextRenderable(renderer, { id: `mark-${index}`, content: index === selected ? "┃" : " ", fg: theme.accent }));
         row.add(new TextRenderable(renderer, { id: `label-${index}`, content: `${item.icon}  ${item.title}`, fg: index === selected ? theme.text : theme.muted, flexGrow: 1 }));
-        row.add(new TextRenderable(renderer, { id: `key-${index}`, content: item.shortcuts.join(" / "), fg: index === selected ? theme.accent : theme.muted }));
+        row.add(new TextRenderable(renderer, { id: `key-${index}`, content: item.shortcuts.join(" / "), fg: index === selected ? theme.accent : theme.shortcut }));
         list.add(row);
       });
     }
