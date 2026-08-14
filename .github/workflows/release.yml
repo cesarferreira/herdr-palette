@@ -9,40 +9,16 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-          - os: macos-14
-            target: aarch64-apple-darwin
-          - os: macos-13
-            target: x86_64-apple-darwin
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-      - run: cargo build --release --locked --target ${{ matrix.target }}
-      - run: >-
-          tar -C target/${{ matrix.target }}/release -czf
-          herdr-palette-${{ matrix.target }}.tar.gz herdr-palette
-      - uses: actions/upload-artifact@v4
-        with:
-          name: herdr-palette-${{ matrix.target }}
-          path: herdr-palette-${{ matrix.target }}.tar.gz
-
-  publish:
-    needs: build
+  release:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test
+      - run: bun run scripts/check-release-version.ts "$GITHUB_REF_NAME"
+      - uses: softprops/action-gh-release@v3
         with:
-          path: dist
-          merge-multiple: true
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: dist/herdr-palette-*.tar.gz
+          generate_release_notes: true
