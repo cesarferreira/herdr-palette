@@ -1,15 +1,15 @@
 import { BoxRenderable, InputRenderable, InputRenderableEvents, TextRenderable, type CliRenderer } from "@opentui/core";
 import type { CommandResult, PaletteItem } from "./types";
+import { fallbackTheme, type PaletteTheme } from "./theme";
 import { viewport } from "./viewport";
 
-export const theme = { background: "#29284f", panel: "#3c3b68", text: "#e9e8ff", muted: "#a7a4df", accent: "#ffe11a", shortcut: "#8be9fd", footer: "#1d1c3a", footerText: "#8f8cd0" };
-
-export interface PaletteDeps { run: (item: PaletteItem, input?: string) => Promise<CommandResult>; close: () => void }
+export interface PaletteDeps { /** Herdr's live palette; omit for the built-in catppuccin fallback. */ theme?: PaletteTheme; run: (item: PaletteItem, input?: string) => Promise<CommandResult>; close: () => void }
 
 /** Rows the chrome always owns: heading, input, the blank line below it, the footer bar. */
 const CHROME_ROWS = 4;
 
 export function mountPalette(renderer: CliRenderer, allItems: PaletteItem[], deps: PaletteDeps) {
+  const theme = deps.theme ?? fallbackTheme;
   let query = "", selected = 0, status = "", running = false;
   let promptItem: PaletteItem | undefined;
   let promptValue = "";
