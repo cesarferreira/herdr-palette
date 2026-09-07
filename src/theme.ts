@@ -118,7 +118,7 @@ export function parseThemeConfig(source: string): { selection?: ThemeSelection; 
   let section = "";
   let name: string | undefined, darkName: string | undefined, lightName: string | undefined, autoSwitch = false;
   for (const line of source.split("\n")) {
-    const header = /^\s*\[([^\]]+)\]\s*$/.exec(line)?.[1];
+    const header = /^\s*\[([^\]]+)\]\s*(?:#.*)?$/.exec(line)?.[1];
     if (header) { section = header.trim(); continue; }
     if (section !== "theme" && section !== "theme.custom") continue;
     const entry = /^\s*([a-z_][a-z0-9_]*)\s*=\s*(.*)$/.exec(line);

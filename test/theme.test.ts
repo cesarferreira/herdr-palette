@@ -44,6 +44,20 @@ test("tolerates trailing comments and unquoted values", () => {
   expect([...custom]).toEqual([["accent", "#f5c2e7"]]);
 });
 
+test("accepts trailing comments on table headers without leaking sections", () => {
+  const { selection, custom } = parseThemeConfig(`
+[theme] # follow desktop
+name = "nord"
+[theme.custom]# overrides
+accent = "#ff0000"
+[ui] # unrelated settings
+name = "dracula"
+accent = "#00ff00"
+`);
+  expect(selection?.name).toBe("nord");
+  expect([...custom]).toEqual([["accent", "#ff0000"]]);
+});
+
 test("resolves every color shape Herdr accepts", () => {
   expect(resolveColor("#AB12CD")).toBe("#ab12cd");
   expect(resolveColor("#abc")).toBe("#aabbcc");
