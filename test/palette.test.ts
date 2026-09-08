@@ -1,7 +1,14 @@
 import { createTestRenderer } from "@opentui/core/testing";
 import { expect, test } from "bun:test";
-import { mountPalette, theme } from "../src/palette";
+import { mountPalette } from "../src/palette";
+import { fallbackTheme } from "../src/theme";
 import type { CommandResult, PaletteItem } from "../src/types";
+
+/**
+ * A palette deliberately unlike both the built-in fallback and anything a real Herdr config
+ * would resolve to, so the assertions below can only pass when the mounted theme is honored.
+ */
+const theme = { background: "#29284f", panel: "#3c3b68", text: "#e9e8ff", muted: "#a7a4df", accent: "#ffe11a", shortcut: "#8be9fd", footer: "#1d1c3a", footerText: "#8f8cd0" };
 
 const item = (id: string, title: string, invocation: PaletteItem["invocation"], prompt?: PaletteItem["prompt"]): PaletteItem =>
   ({ id, title, category: "Panes", description: "Does the thing", icon: "▯", aliases: [], shortcuts: ["ctrl+a+z"], invocation, ...(prompt ? { prompt } : {}) });
@@ -16,6 +23,7 @@ async function palette(result: CommandResult) {
   const harness = await createTestRenderer({ width: 60, height: 14 });
   const ran: Array<{ id: string; input?: string } | "closed"> = [];
   mountPalette(harness.renderer, items, {
+    theme,
     run: async (selected, input) => {
       ran.push(input === undefined ? { id: selected.id } : { id: selected.id, input });
       return result;
@@ -129,7 +137,7 @@ test("reports why a command did not run instead of ignoring enter", async () => 
 });
 
 test("stays usable when running a command throws", async () => {
-  const { renderer, mockInput, renderOnce, captureCharFrame } = await createTestRenderer({ width: 60, height: 14 });
+  const { renderer, mockInput, renderOnce, captureCharFrame, captureSpans } = await createTestRenderer({ width: 60, height: 14 });
   mountPalette(renderer, items, { run: async () => { throw new Error("herdr is not on PATH"); }, close: () => {} });
 
   await mockInput.typeText("zoom");
@@ -139,6 +147,9 @@ test("stays usable when running a command throws", async () => {
   await settle();
   await renderOnce();
 
+  // No theme injected here on purpose, so this also covers the built-in fallback palette.
+  const footer = captureSpans().lines.at(-1)!;
+  expect(footer.spans.map(span => hex(span.bg))).toEqual(footer.spans.map(() => fallbackTheme.footer));
   expect(captureCharFrame()).toContain("herdr is not on PATH");
 });
 

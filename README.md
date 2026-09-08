@@ -56,11 +56,18 @@ Use `make release LEVEL=patch` or `LEVEL=major` for a different bump.
 
 ## Configuration and scope
 
-The palette reads Herdr's `config.toml`, including `[keys]` remaps and custom
-`[[keys.command]]` bindings, so it displays your effective shortcuts. Bindings
-keep the word `prefix` instead of expanding it to the concrete leader key
+The palette reads Herdr's `config.toml`, including `[keys]` remaps, custom
+`[[keys.command]]` bindings, and `[theme]`, so it displays your effective
+shortcuts and paints itself with your effective theme. Bindings keep the word
+`prefix` instead of expanding it to the concrete leader key
 (e.g. `prefix+z`, not `ctrl+a+z`). It owns no configuration or durable state
 and never writes to your Herdr config.
+
+### Theme
+
+The popup follows Herdr's `[theme]` settings — `auto_switch`, `[theme.custom]`,
+and the `[theme.custom.light]`/`[theme.custom.dark]` blocks — each time it
+opens. No extra configuration is needed.
 
 Only actions documented by Herdr and backed by its CLI/API run directly from the
 palette, including rename, close, workspace/agent navigation, resize, swap, move
