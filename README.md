@@ -65,8 +65,9 @@ and never writes to your Herdr config.
 
 ### Theme
 
-The popup follows Herdr's `[theme]` settings, including `auto_switch` and
-`[theme.custom]` colors, each time it opens. No extra configuration is needed.
+The popup follows Herdr's `[theme]` settings — `auto_switch`, `[theme.custom]`,
+and the `[theme.custom.light]`/`[theme.custom.dark]` blocks — each time it
+opens. No extra configuration is needed.
 
 Only actions documented by Herdr and backed by its CLI/API run directly from the
 palette, including rename, close, workspace/agent navigation, resize, swap, move

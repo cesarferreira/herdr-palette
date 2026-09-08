@@ -112,28 +112,33 @@ export interface ThemeSelection {
   lightName?: string;
 }
 
-/** Read just the `[theme]` and `[theme.custom]` sections of a config.toml. */
-export function parseThemeConfig(source: string): { selection?: ThemeSelection; custom: Map<string, string> } {
+/** Read just the `[theme]`, `[theme.custom]`, and `[theme.custom.light|dark]` sections of a config.toml. */
+export function parseThemeConfig(source: string): { selection?: ThemeSelection; custom: Map<string, string>; customLight: Map<string, string>; customDark: Map<string, string> } {
   const custom = new Map<string, string>();
+  const customLight = new Map<string, string>();
+  const customDark = new Map<string, string>();
   let section = "";
   let name: string | undefined, darkName: string | undefined, lightName: string | undefined, autoSwitch = false;
   for (const line of source.split("\n")) {
     const header = /^\s*\[([^\]]+)\]\s*(?:#.*)?$/.exec(line)?.[1];
     if (header) { section = header.trim(); continue; }
-    if (section !== "theme" && section !== "theme.custom") continue;
+    if (section !== "theme" && !section.startsWith("theme.custom")) continue;
     const entry = /^\s*([a-z_][a-z0-9_]*)\s*=\s*(.*)$/.exec(line);
     const [, key, rawValue] = entry ?? [];
     if (!key || !rawValue) continue;
     const value = tomlValue(rawValue);
     if (!value) continue;
-    if (section === "theme.custom") {
-      if (TOKENS.includes(key)) custom.set(key, value);
-    } else if (key === "name") name = value;
-    else if (key === "auto_switch") autoSwitch = value === "true";
-    else if (key === "dark_name") darkName = value;
-    else if (key === "light_name") lightName = value;
+    if (section === "theme.custom") custom.set(key, value);
+    else if (section === "theme.custom.light" && TOKENS.includes(key)) customLight.set(key, value);
+    else if (section === "theme.custom.dark" && TOKENS.includes(key)) customDark.set(key, value);
+    else if (section === "theme") {
+      if (key === "name") name = value;
+      else if (key === "auto_switch") autoSwitch = value === "true";
+      else if (key === "dark_name") darkName = value;
+      else if (key === "light_name") lightName = value;
+    }
   }
-  return { selection: name ? { name, autoSwitch, darkName, lightName } : undefined, custom };
+  return { selection: name ? { name, autoSwitch, darkName, lightName } : undefined, custom, customLight, customDark };
 }
 
 /** A basic TOML string's contents, or a bare value with its trailing comment removed. */
@@ -201,15 +206,18 @@ export function composeTheme(tokens: Record<string, string>, neutral: PaletteThe
 export function loadTheme(path = process.env.HERDR_CONFIG_PATH ?? `${process.env.HOME}/.config/herdr/config.toml`, hostLight: () => boolean = isHostLight): PaletteTheme {
   let source = "";
   try { source = readFileSync(path, "utf8"); } catch { return fallbackTheme; }
-  const { selection, custom } = parseThemeConfig(source);
+  const { selection, custom, customLight, customDark } = parseThemeConfig(source);
   if (!selection) return fallbackTheme;
-  // Host appearance is only consulted when auto_switch picks a partner or `terminal` needs neutrals.
+  // Host appearance is only consulted when auto_switch picks a partner, `terminal` needs neutrals,
+  // or a `[theme.custom.light|dark]` block applies — Herdr layers those the same way.
   let light: boolean | undefined;
   const hostIsLight = () => (light ??= hostLight());
   const name = selection.autoSwitch ? effectiveThemeName(selection, hostIsLight()) : normalizeThemeName(selection.name);
   // A `terminal` theme follows the host appearance; built-in light families need light fills.
   const neutral = hostTheme(isLightName(name) || (name === "terminal" && hostIsLight()));
-  return themeFor(name, custom, neutral);
+  // The mode block applies only under auto_switch, on top of the shared overrides (Herdr PR #2324).
+  const mode = selection.autoSwitch ? (hostIsLight() ? customLight : customDark) : new Map<string, string>();
+  return themeFor(name, custom, neutral, mode);
 }
 
 /**
@@ -217,7 +225,7 @@ export function loadTheme(path = process.env.HERDR_CONFIG_PATH ?? `${process.env
  * ANSI names too — means "the host terminal's own color", unknowable from a plugin pane, so those
  * slots fall to `neutral`. Explicit custom values always win, ANSI names included.
  */
-export function themeFor(name: string, custom: Map<string, string> = new Map(), neutral: PaletteTheme = fallbackTheme): PaletteTheme {
+export function themeFor(name: string, custom: Map<string, string> = new Map(), neutral: PaletteTheme = fallbackTheme, modeCustom: Map<string, string> = new Map()): PaletteTheme {
   const tokens: Record<string, string> = {};
   const merge = (source: Record<string, string>, namedAsReset: boolean) => {
     for (const [token, value] of Object.entries(source)) {
@@ -229,5 +237,6 @@ export function themeFor(name: string, custom: Map<string, string> = new Map(), 
   };
   merge(builtinTheme(name) ?? FALLBACK_TOKENS, normalizeThemeName(name) === "terminal");
   merge(Object.fromEntries(custom), false);
+  merge(Object.fromEntries(modeCustom), false);
   return composeTheme(tokens, neutral);
 }

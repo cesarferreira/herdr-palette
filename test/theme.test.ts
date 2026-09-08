@@ -140,12 +140,66 @@ test("loads the effective theme from a config file", () => {
   expect(theme.muted).toBe(themeFor("catppuccin-latte").muted);
 });
 
+test("reads per-mode override blocks into their own maps", () => {
+  const { custom, customLight, customDark } = parseThemeConfig(`
+[theme]
+name = "catppuccin-latte"
+auto_switch = true
+
+[theme.custom]
+accent = "#fe640b"
+
+[theme.custom.light]
+text = "#2e3145"
+
+[theme.custom.dark] # comments apply here too
+text = "#cdd6f4"
+not_a_token = "ignored"
+
+[theme.custom.other]
+text = "#ff0000"
+`);
+  expect([...custom]).toEqual([["accent", "#fe640b"]]);
+  expect([...customLight]).toEqual([["text", "#2e3145"]]);
+  expect([...customDark]).toEqual([["text", "#cdd6f4"]]);
+});
+
 test("follows an auto_switch config to the host appearance", () => {
   const path = join(mkdtempSync(join(tmpdir(), "herdr-palette-theme-")), "config.toml");
   writeFileSync(path, '[theme]\nname = "catppuccin"\nauto_switch = true\ndark_name = "tokyo-night"\nlight_name = "catppuccin-latte"\n');
 
   expect(loadTheme(path, () => true).text).toBe(themeFor("catppuccin-latte").text);
   expect(loadTheme(path, () => false).text).toBe(themeFor("tokyo-night").text);
+});
+
+test("layers per-mode overrides over the shared ones by host appearance", () => {
+  const path = join(mkdtempSync(join(tmpdir(), "herdr-palette-theme-")), "config.toml");
+  writeFileSync(path, `
+[theme]
+name = "catppuccin-latte"
+auto_switch = true
+light_name = "catppuccin-latte"
+dark_name = "tokyo-night"
+
+[theme.custom]
+accent = "#111111"
+
+[theme.custom.light]
+accent = "#222222"
+
+[theme.custom.dark]
+accent = "#333333"
+`);
+
+  expect(loadTheme(path, () => true).accent).toBe("#222222");
+  expect(loadTheme(path, () => false).accent).toBe("#333333");
+});
+
+test("manual mode ignores per-mode blocks, like Herdr", () => {
+  const path = join(mkdtempSync(join(tmpdir(), "herdr-palette-theme-")), "config.toml");
+  writeFileSync(path, '[theme]\nname = "nord"\n\n[theme.custom.light]\naccent = "#222222"\n');
+
+  expect(loadTheme(path, () => true).accent).toBe(themeFor("nord").accent);
 });
 
 test("the vendored palettes carry exactly the known tokens with resolvable colors", () => {
